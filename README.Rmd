@@ -1,0 +1,11 @@
+---
+title: "readme"
+author: "Bomin Xie"
+date: "2023-05-27"
+output: html_document
+---
+
+#BIMM 143
+
+Welcome to BIMM 143! This Repo is a collection of all BIMM 143 bioinfo class files.
+

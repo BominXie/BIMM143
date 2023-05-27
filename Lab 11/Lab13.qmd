@@ -1,0 +1,31 @@
+---
+title: "Homework 11"
+author: "Bomin Xie A16144147"
+format: pdf
+---
+
+# Homework 11
+
+You are interested in assessing genetic differences on a population scale. So, you processed about ~230 samples and did the normalization on a genome level. Now, you want to find whether there is any association of the 4 asthma-associated SNPs (rs8067378...) on ORMDL3 expression.
+
+```{r}
+expression = read.table("https://marcos-diazg.github.io/BIMM143_SP23/class-material/class11/rs8067378_ENSG00000172057.6.txt")
+summary(expression)
+median(expression$exp[expression$geno == "A/A"])
+median(expression$exp[expression$geno == "A/G"])
+median(expression$exp[expression$geno == "G/G"])
+table(expression$geno)
+```
+
+Q13: The sample size for each genotype is: 108 samples for the A/A genotype, 233 for A/G, and 121 for G/G. The median of each genotype is 31.2 (A/A), 25.1 (A/G), and 20.1 (G/G).
+
+```{r}
+library(ggplot2)
+ggplot(expression) + aes(geno, exp, fill=geno) + 
+  geom_boxplot(notch = TRUE) +
+  geom_jitter(color="black", alpha=0.2, width = 0.2) +
+  xlab("Genotype") + ylab("Expression") + labs(fill = "Genotype")
+```
+
+Q14: From the graph, A/A has higher expression on ORMDL3 than G/G genotype. The genotype difference is correlated to the expression differences, which indicates the SNP might affect the ORMDL3 expression.
+
