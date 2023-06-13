@@ -1,0 +1,151 @@
+---
+title: "Lab05"
+author: "Bomin Xie"
+format: pdf
+---
+
+# Week 4 Lab 5
+
+Initiation of ggplot2, and visit the data set:
+
+```{r}
+#install.pockages("ggplot2")
+library(ggplot2)
+#View(cars)
+plot(cars) # A quick R-based plot
+ggplot(cars)
+```
+
+Plot dataset with ggplot2:
+
+```{r}
+ggplot(cars) +
+  aes(x=speed, y=dist) +
+  geom_point()
+```
+
+Plot data points onto ggplot2 with aes() and geom_point():
+
+```{r}
+ggplot(cars) +
+  aes(x=speed, y=dist) +
+  geom_point() +
+  geom_smooth() # Add line
+```
+
+```{r}
+p <- ggplot(cars) +
+      aes(x=speed, y=dist) +
+      geom_point() +
+      geom_smooth(method = "lm", se=FALSE) 
+```
+
+```{r}
+p <- ggplot(cars) +
+      aes(x=speed, y=dist) +
+      geom_point() +
+      geom_smooth(method = "lm", se=FALSE) +
+      labs(title="Speed and Stopping Distances of Cars",
+          x="Speed (MPH)", 
+          y="Stopping Distance (ft)")
+```
+
+------------------------------------------------------------------------
+
+Read the drug expression data:
+
+```{r}
+url <- "https://bioboot.github.io/bimm143_S20/class-material/up_down_expression.txt"
+genes <- read.delim(url)
+head(genes)
+```
+
+Analyzing the dataset:
+
+```{r}
+nrow(genes) # Number of rows in the data set
+colnames(genes) # Name of columns in the data set
+table(genes$State) # Different states of genes in the data set
+table(genes$State) / nrow(genes) * 100
+```
+
+Plot a scatter plot of the two conditions in the genes data
+
+```{r}
+ggplot(genes) + 
+    aes(x=Condition1, y=Condition2, col=State) +
+    geom_point() +
+    scale_colour_manual(values = c("blue","grey","red")) +
+    labs(title="Gene Expresion Changes Upon Drug Treatment",
+         x="Control (no drug) ",
+         y="Drug Treatment")
+```
+
+---
+
+Advanced ggplot() function through gapminder dataset
+
+```{r}
+# Import gapminder
+url <- "https://raw.githubusercontent.com/jennybc/gapminder/master/inst/extdata/gapminder.tsv"
+gapminder <- read.delim(url)
+```
+
+Use dplyr to focus on single year:
+
+```{r}
+# install.packages("dplyr") 
+library(dplyr)
+gapminder_2007 <- gapminder %>% filter(year==2007)
+```
+
+Plot the result:
+
+```{r}
+ggplot(gapminder_2007) +
+  aes(x=gdpPercap, y=lifeExp) +
+  geom_point()
+```
+
+Adding more aesthetics:
+
+```{r}
+ggplot(gapminder_2007) +
+  aes(x=gdpPercap, y=lifeExp, color=continent, size=pop) +
+  geom_point(alpha=0.5)
+```
+
+---
+
+Analyzing data through bar chart:
+
+```{r}
+gapminder_top5 <- gapminder %>% 
+  filter(year==2007) %>% 
+  arrange(desc(pop)) %>% 
+  top_n(5, pop)
+
+gapminder_top5
+ggplot(gapminder_top5) + 
+  geom_col(aes(x = country, y = pop, fill = continent))
+```
+
+---
+
+Animations of ggplot, through gifski() and gganimate():
+
+```{r}
+library(gifski)
+library(gganimate)
+
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, colour = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+# scale_colour_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  facet_wrap(~continent) +
+  labs(title = 'Year: {frame_time}', x = 'GDP per capita', y = 'life expectancy') +
+  transition_time(year) +
+  shadow_wake(wake_length = 0.1, alpha = FALSE)
+```
+

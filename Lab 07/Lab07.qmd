@@ -1,0 +1,247 @@
+---
+title: "Lab 07"
+author: "Bomin Xie"
+format: pdf
+---
+
+# Class 07 Lab - Hands on with PCA
+
+## K-means introduction
+
+Demo using `kmeans()` function:
+
+```{r}
+tmp = c(rnorm(30, -3), rnorm(30,3))
+x = cbind(x=tmp, y=rev(tmp))
+x
+plot(x)
+```
+
+Now apply kmeans to see how it works with these data:
+
+```{r}
+k = kmeans(x, center=2, nstart = 20)
+k
+```
+
+```{r}
+k$size # gives how many points in each cluster
+k$cluster # gives how we get to the cluster membership/assignment
+k$centers # gives us what are the cluster centers
+```
+
+Plot the kmeans result based on the main results:
+
+```{r}
+plot(x, col=k$cluster)
+points(k$centers, col="blue", pch=15)
+```
+## Hierarchical clustering hclust()
+
+We will then cluster the same data with `hclust()`.
+
+```{r}
+hc = hclust(dist(x)) # Need a distance matrix as an input (dissimilarity)
+hc
+plot(hc)
+```
+
+To get the cluster membership vector, we need to "cut" the tree:
+
+```{r}
+group1 = cutree(hc, h=8)
+group1
+```
+
+We could plot our data with the result.
+
+```{r}
+plot(x, col=group1)
+```
+
+
+## PCA of UK food data
+
+### Import data and general visualization
+
+Import data from website and try few visualization:
+
+```{r}
+url = "https://tinyurl.com/UK-foods"
+x = read.csv(url)
+```
+
+Examine the number of rows and columns:
+
+```{r}
+dim(x)
+```
+
+Q1: Based on the result, there are 17 rows and 5 columns in the new dataframe "x".
+
+Preview a portion of the data: 
+
+```{r}
+head(x)
+```
+
+Correct the error of including the country as part of the data:
+
+```{r}
+# Note how the minus indexing works
+rownames(x) = x[,1]
+x = x[,-1]
+head(x)
+dim(x)
+```
+
+Q2: An alternative approach of setting ```row.names``` as the first column would be more convenient if the structure of the data frame is known. Meanwhile, the deletion of first column might cause trouble of deleting all data if performed multiple times.
+
+Plot the table in the form of barplots:
+
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+
+Q3: If we would like to change the barplot to a stacked barplot, we could change the argument ```beside``` as FALSE:
+
+```{r}
+barplot(as.matrix(x), beside=F, col=rainbow(nrow(x)))
+```
+
+Q5: a generation of all pairwise plots might help distinguish the differences between different regions. The plot is a pair-wise comparison on different countries of UK. The diagonal value indicates the similarities between the pair of regions (i.e. England vs. Wales, or England vs. N. Ireland), and if the values of a certain factor in two different regions are similar between the two regions, the point is closer to the diagonal line. (The figure is depicted below.)
+
+```{r}
+pairs(x, col=rainbow(10), pch=16)
+```
+
+Q6. The main difference between N.Ireland and other countries of UK in this dataset is the amount of Fresh potatoes, as depicted as the blue dot in the figure.
+
+### PCA to the rescue
+
+Using R ```prcomp()``` function to generate a PCA. Note the observation should be in rows and variables should be in columns (which we need to transpose the original dataframe ```x```)
+
+```{r}
+pca <- prcomp(t(x))
+summary(pca)
+```
+
+To make the new PCA plot we access `pca$x`:
+
+```{r}
+pca$x
+```
+
+
+Q7:
+```{r}
+plot(pca$x[,1], pca$x[,2], xlab="PC1", ylab="PC2", xlim=c(-270,500))
+text(pca$x[,1], pca$x[,2], colnames(x))
+```
+To add more color, we could add a color vector to text:
+```{r}
+plot(pca$x[,1], pca$x[,2], xlab="PC1", ylab="PC2", xlim=c(-270,500))
+text(pca$x[,1], pca$x[,2], colnames(x), col=c("orange","red","blue","green"))
+```
+
+Using scree plot to determine the variation in the original data of each PC:
+
+```{r}
+pca_sum = summary(pca)
+pca_sum$importance
+barplot(pca_sum$importance[2,] * 100, xlab="Principal Component", ylab="Percent Variation") # Gives the eigenvector and eigenvalue
+```
+
+### Variable loadings
+
+To examine the influence of each original variables on each PCA component, we are using `rotation`:
+
+```{r}
+par(mar=c(10, 3, 0.35, 0))
+barplot( pca$rotation[,1], las=2 )
+barplot( pca$rotation[,2], las=2 )
+```
+
+Q9: Based on the plotting, the two food groups feature prominently are fresh potatoes and soft drinks. The soft drink consumption pushed other countries below the Wales and the consumption of Fresh potatoes allowed the separation of those countries on the figure. 
+
+## PCA of RNA-seq data
+
+Pull down the data of RNA-seq from website:
+
+```{r}
+url2 <- "https://tinyurl.com/expression-CSV"
+rna.data <- read.csv(url2, row.names=1)
+head(rna.data)
+dim(rna.data)
+```
+
+Q10: According to the output, there are 100 genes and 10 samples in the data set.
+
+Perform PCA on the dataset:
+
+```{r}
+pca <- prcomp(t(rna.data), scale=TRUE)
+plot(pca$x[,1], pca$x[,2], xlab="PC1", ylab="PC2")
+summary(pca)
+```
+
+Examine the variance per PC:
+
+```{r}
+plot(pca, main="Quick scree plot", xlab="Importance of components")
+```
+
+```{r}
+pca.var <- pca$sdev^2
+pca.var.per <- round(pca.var/sum(pca.var)*100, 1)
+pca.var.per
+
+barplot(pca.var.per, main="Scree Plot", 
+        names.arg = paste0("PC", 1:10),
+        xlab="Principal Component", ylab="Percent Variation")
+
+```
+
+Adjust the main PCA plot, adding notations and names of each sample:
+
+```{r}
+colvec <- colnames(rna.data)
+colvec[grep("wt", colvec)] <- "red"
+colvec[grep("ko", colvec)] <- "blue"
+
+plot(pca$x[,1], pca$x[,2], col=colvec, pch=16,
+     xlab=paste0("PC1 (", pca.var.per[1], "%)"),
+     ylab=paste0("PC2 (", pca.var.per[2], "%)"))
+
+text(pca$x[,1], pca$x[,2], labels = colnames(rna.data), pos=c(rep(4,5), rep(2,5)))
+```
+
+### Using ggplot2 package to facilitate the plotting
+
+```{r}
+library(ggplot2)
+
+df <- as.data.frame(pca$x)
+
+# Our first basic plot
+ggplot(df) + 
+  aes(PC1, PC2) + 
+  geom_point()
+
+# Add a 'wt' and 'ko' "condition" column
+df$samples <- colnames(rna.data) 
+df$condition <- substr(colnames(rna.data),1,2)
+
+p <- ggplot(df) + 
+        aes(PC1, PC2, label=samples, col=condition) + 
+        geom_label(show.legend = FALSE)
+p
+
+p + labs(title="PCA of RNASeq Data",
+       subtitle = "PC1 clealy seperates wild-type from knock-out samples",
+       x=paste0("PC1 (", pca.var.per[1], "%)"),
+       y=paste0("PC2 (", pca.var.per[2], "%)"),
+       caption="Class example data") +
+     theme_bw()
+```
+

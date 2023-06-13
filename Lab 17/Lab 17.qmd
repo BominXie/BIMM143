@@ -1,0 +1,179 @@
+---
+title: "Lab 17"
+author: "Bomin Xie"
+format: pdf
+---
+
+# Getting started
+
+```{r}
+# Import vaccination data
+vax <- read.csv("https://marcos-diazg.github.io/BIMM143_SP23/class-material/class17/covid19vaccinesbyzipcode_test.csv")
+head(vax)
+```
+
+Q1: The column details the total number of people fully vaccinated are "persons_fully_vaccinatted".
+
+Q2: The column details the Zip code tabulation area is "zip_code_tabulation_area".
+
+Q3: The earliest date in this dataset is "2021-01-05".
+
+Q4: The latest date in this dataset is "2023-05-23".
+
+```{r}
+# install.packages("skimr")
+library(skimr)
+skimr::skim_without_charts(vax)
+```
+
+Q5: In this dataset, there are 14 numeric columns in this dataset.
+
+Q6: There are 17711 "missing values" in the "persons_fully_vaccinated" column.
+
+Q7: Based on the skimr result, there are 8.04 percent of  "persons_fully_vaccinated" values are missing.
+
+## Working with dates
+
+```{r}
+# install.packages("lubridate")
+library(lubridate)
+today()
+vax$as_of_date <- ymd(vax$as_of_date)
+today() - vax$as_of_date[nrow(vax)]
+length(unique(vax$as_of_date))
+```
+
+Q9: It has been 21 days passed since the last update.
+
+Q10: There are 125 unique dates in the dataset.
+
+# Working with ZIP codes
+
+```{r}
+# install.packages("zipcodeR")
+library(zipcodeR)
+geocode_zip('92037')
+zip_distance('92037','92109')
+```
+
+# Focus on San Diego area
+
+```{r}
+library(dplyr)
+sd <- filter(vax, county == "San Diego")
+nrow(sd)
+```
+```{r}
+sd.10 <- filter(vax, county == "San Diego" &
+                age5_plus_population > 10000)
+```
+
+```{r}
+length(unique(sd$zip_code_tabulation_area))
+sd$zip_code_tabulation_area[which.max(unique(sd$tot_population))]
+```
+
+Q11: There are 107 distinct zip codes.
+
+Q12: The zip code area with largest population in this dataset is 92154.
+
+```{r}
+avg_percent <- filter(sd, as_of_date == "2023-02-28")
+mean(avg_percent$percent_of_population_fully_vaccinated, na.rm = TRUE) * 100
+```
+
+
+Q13: The overall average "percent of population fully vaccinated value" is 74.13.
+
+Q14: 
+
+```{r}
+library(ggplot2)
+ggplot(avg_percent, aes(percent_of_population_fully_vaccinated)) + 
+  geom_histogram(bins = 10, na.rm = TRUE, color= "black", fill = "grey") + 
+  ggtitle("Histogram of Vaccination rates across San Diego County") + 
+  xlab("Percent of Population Fully Vaccinated in a Zip Code Area") + ylab("Count(Zip Code Areas")
+```
+
+## Focus on UCSD/La Jolla
+
+```{r}
+ucsd <- filter(sd, zip_code_tabulation_area=="92037")
+ucsd[1,]$age5_plus_population
+```
+
+Q15:
+
+```{r}
+vaccination_rate_plot <- ggplot(ucsd) +
+  aes(as_of_date, percent_of_population_fully_vaccinated) +
+  geom_point() +
+  geom_line(group=1) +
+  ylim(c(0,1)) +
+  labs(title = "Vaccination Rate for La Jolla CA 92037", x= "Date", y="Percent Vaccinated")
+vaccination_rate_plot
+```
+
+## Comparing to similar sized areas
+
+```{r}
+vax.36 <- filter(vax, age5_plus_population > 36144 &
+                as_of_date == "2023-02-28")
+
+#head(vax.36)
+```
+
+Q16:
+
+```{r}
+mean_92037 <- mean(vax.36$percent_of_population_fully_vaccinated)
+mean_92037
+vaccination_rate_plot + geom_hline(yintercept = mean_92037, color = "red", linetype = 5)
+```
+
+Q17: The 6 number summary is listed below:
+
+```{r}
+summary(vax.36$percent_of_population_fully_vaccinated)
+```
+
+Q18:
+
+```{r}
+ggplot(vax.36, aes(percent_of_population_fully_vaccinated)) +
+  geom_histogram(na.rm = TRUE) + 
+  xlim(0,1) + 
+  xlab("Percent Vaccinated") + ylab("Count")
+        
+```
+
+```{r}
+vax %>% filter(as_of_date == "2023-05-23") %>%  
+  filter(zip_code_tabulation_area=="92040") %>%
+  select(percent_of_population_fully_vaccinated)
+
+vax %>% filter(as_of_date == "2023-05-23") %>%  
+  filter(zip_code_tabulation_area=="92109") %>%
+  select(percent_of_population_fully_vaccinated)
+```
+
+Q19: Based on the above result, both the two ZIP code areas are below the average value of 0.7219.
+
+Q20: 
+
+```{r}
+vax.36.all <- filter(vax, age5_plus_population > 36144)
+
+
+ggplot(vax.36.all) +
+  aes(as_of_date,
+      percent_of_population_fully_vaccinated, 
+      group=zip_code_tabulation_area) +
+  geom_line(alpha=0.2, color="Blue", na.rm = TRUE) +
+  ylim(0,1) +
+  labs(x="Date", y="Percent Vaccinated",
+       title="Vaccination Rate Across California",
+       subtitle="Only areas with population above 36k are shown") +
+  geom_hline(yintercept = mean_92037, linetype=5)
+```
+
